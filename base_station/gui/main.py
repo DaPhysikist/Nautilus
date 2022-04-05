@@ -85,7 +85,7 @@ class Main():
             pass
 
         #### Code below is to fix high resolution screen scaling. ###
->>>>>> > ff8ff7605ac4ae93024f34e9b0b1d920201f1a0b
+#>>>>>> > ff8ff7605ac4ae93024f34e9b0b1d920201f1a0b
         os_enumerator = None
         # https://stackoverflow.com/questions/446209/possible-values-from-sys-platform
         if "linux" in sys.platform:  # Linux designated as "linux"
