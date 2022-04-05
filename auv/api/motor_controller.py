@@ -16,17 +16,18 @@ TURN_GPIO_PIN = 11  # 24
 FRONT_GPIO_PIN = 18  # 4
 BACK_GPIO_PIN = 24  # 11
 
+
 # Define pin numbers for PI (Not the same as GPIO?)
-FORWARD_PI_PIN = 7
-TURN_PI_PIN = 23
-FRONT_PI_PIN = 12
-BACK_PI_PIN = 18
+FORWARD_PI_PIN = 7          # Left pins
+TURN_PI_PIN = 23            # Right pins
+FRONT_PI_PIN = 12           # Back pins
+BACK_PI_PIN = 18            # Front pins
 
 # Indices for motor array
-FORWARD_MOTOR_INDEX = 0
-TURN_MOTOR_INDEX = 1
-FRONT_MOTOR_INDEX = 2
-BACK_MOTOR_INDEX = 3
+FORWARD_MOTOR_INDEX = 0         # in the back
+TURN_MOTOR_INDEX = 1            # in the front
+FRONT_MOTOR_INDEX = 2           # goes up/down
+BACK_MOTOR_INDEX = 3            # goes up/down
 
 # Constants
 BALLAST = 4
@@ -80,8 +81,8 @@ class MotorController:
             return
 
         # Parse motor speed from data object.
-        self.left_speed = data[FORWARD_MOTOR_INDEX]
-        self.right_speed = data[TURN_MOTOR_INDEX]
+        self.forward_speed = data[FORWARD_MOTOR_INDEX]
+        self.turn_speed = data[TURN_MOTOR_INDEX]
         self.front_speed = data[FRONT_MOTOR_INDEX]
         self.back_speed = data[BACK_MOTOR_INDEX]
 
@@ -158,6 +159,9 @@ class MotorController:
         for motor in self.motors:
             motor.set_speed(0)
 
+        log("motors set to [0, 0, 0, 0]")
+
+
     def test_all(self):
         """
         Calibrates each individual motor.
@@ -188,7 +192,8 @@ class MotorController:
         io.setmode(io.BOARD)
         for pins in self.pi_pins:
             io.setup(pins, io.IN)
-            log("Pin:", pins, io.input(pins))
+            print("Pin: ", pins, io.input(pins))
+            #log("Pin:", pins, io.input(pins))
 
     def calculate_pid_new_speed(self, feedback):
         # Case 1: Going backward
@@ -201,6 +206,7 @@ class MotorController:
 
 def main():
     mc = MotorController()
+    mc.test_all()
 
 
 if __name__ == '__main__':
