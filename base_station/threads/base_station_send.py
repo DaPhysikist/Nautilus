@@ -25,7 +25,7 @@ HALT = 0b010
 CAL_DEPTH = 0b011
 ABORT = 0b100
 DL_DATA = 0b101
-
+CAL_HEADING = 0b110
 
 class BaseStation_Send(threading.Thread):
     def __init__(self, in_q=None, out_q=None):
@@ -143,6 +143,9 @@ class BaseStation_Send(threading.Thread):
 
     def send_download_data(self):
         self.start_mission(DL_DATA, 0, 0)
+
+    def send_calibrate_heading(self):
+        self.start_mission(CAL_HEADING, 0, 0)
 
     def send_dive(self, depth):
         constants.lock.acquire()

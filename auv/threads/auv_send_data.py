@@ -73,13 +73,7 @@ class AUV_Send_Data(threading.Thread):
                     raise Exception("Error occured : " + str(e))
 
     def send_heading(self):
-        try:
-            heading, _, _ = self.imu.read_euler()
-            print('HEADING=', heading)
-        except:
-            # TODO print statement, something went wrong!
-            heading = 0
-
+        heading = self.get_heading()
         split_heading = math.modf(heading)
         decimal_heading = int(round(split_heading[0], 2) * 100)
         whole_heading = int(split_heading[1])
@@ -159,4 +153,15 @@ class AUV_Send_Data(threading.Thread):
             return depth - global_vars.depth_offset
         else:
             global_vars.log("No pressure sensor found.")
+            return None
+    
+    def get_heading(self):
+        try:
+            heading, _, _ = self.imu.read_euler()
+            print('HEADING=', heading)
+            heading = heading - global_vars.heading_offset
+            return heading
+        except:
+            # TODO print statement, something went wrong!
+            global_vars.log("No IMU found.")
             return None
