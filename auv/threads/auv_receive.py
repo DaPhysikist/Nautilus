@@ -418,7 +418,7 @@ class AUV_Receive(threading.Thread):
                 heading, _, _ = self.imu.read_euler()
             except:
                 print("Failed to read IMU")
-            return heading - global_vars.heading_offset()
+            return heading - global_vars.heading_offset
         else:
             global_vars.log("No IMU found.")
             return None
