@@ -21,12 +21,21 @@ def get_heading_encode(data):
 class AUV_Send_Data(threading.Thread):
     """ Class for the AUV object. Acts as the main file for the AUV. """
 
+<<<<<<< HEAD
     def __init__(self):
         """ Constructor for the AUV """
         self.radio = None
         self.pressure_sensor = None
         self.imu = None
         self.mc = MotorController()
+=======
+    def __init__(self, radio, pressure_sensor, imu, mc):
+        """ Constructor for the AUV """
+        self.radio = radio
+        self.pressure_sensor = pressure_sensor
+        self.imu = imu
+        self.mc = mc
+>>>>>>> 4f2d27b800a8bfdc168ecc3803d3779e67edfdcc
         self.time_since_last_ping = 0.0
         self.current_mission = None
         self.timer = 0
@@ -35,6 +44,7 @@ class AUV_Send_Data(threading.Thread):
 
         threading.Thread.__init__(self)
 
+<<<<<<< HEAD
     def _init_hardware(self):
         try:
             self.pressure_sensor = PressureSensor()
@@ -60,17 +70,26 @@ class AUV_Send_Data(threading.Thread):
 
         self._init_hardware()
 
+=======
+    def run(self):
+        """ Main connection loop for the AUV. """
+
+>>>>>>> 4f2d27b800a8bfdc168ecc3803d3779e67edfdcc
         global_vars.log("Starting main sending connection loop.")
         while not self._ev.wait(timeout=constants.SEND_SLEEP_DELAY):
             # time.sleep(SEND_SLEEP_DELAY)
 
             if self.radio is None or self.radio.is_open() is False:
                 print("TEST radio not connected")
+<<<<<<< HEAD
                 try:  # Try to connect to our devices.
                     self.radio = Radio(constants.RADIO_PATH)
                     global_vars.log("Radio device has been found!")
                 except:
                     pass
+=======
+                global_vars.connect_to_radio()
+>>>>>>> 4f2d27b800a8bfdc168ecc3803d3779e67edfdcc
 
             else:
                 try:
@@ -95,6 +114,7 @@ class AUV_Send_Data(threading.Thread):
                     raise Exception("Error occured : " + str(e))
 
     def send_heading(self):
+<<<<<<< HEAD
         try:
             heading, _, _ = self.imu.read_euler()
             print('HEADING=', heading)
@@ -103,6 +123,9 @@ class AUV_Send_Data(threading.Thread):
             heading = 0
             self.radio.write(str.encode("log(\"[AUV]\tAn error occurred while trying to read heading.\")\n"))
 
+=======
+        heading = self.get_heading()
+>>>>>>> 4f2d27b800a8bfdc168ecc3803d3779e67edfdcc
         split_heading = math.modf(heading)
         decimal_heading = int(round(split_heading[0], 2) * 100)
         whole_heading = int(split_heading[1])
@@ -120,7 +143,10 @@ class AUV_Send_Data(threading.Thread):
         except:
             # TODO print statement, something went wrong!
             temperature = 0
+<<<<<<< HEAD
             self.radio.write(str.encode("log(\"[AUV]\tAn error occurred while trying to read temperature.\")\n"))
+=======
+>>>>>>> 4f2d27b800a8bfdc168ecc3803d3779e67edfdcc
         # Temperature radio
         whole_temperature = int(temperature)
         sign = 0
@@ -184,3 +210,17 @@ class AUV_Send_Data(threading.Thread):
         else:
             global_vars.log("No pressure sensor found.")
             return None
+<<<<<<< HEAD
+=======
+    
+    def get_heading(self):
+        try:
+            heading, _, _ = self.imu.read_euler()
+            print('HEADING=', heading)
+            heading = heading - global_vars.heading_offset
+            return heading
+        except:
+            # TODO print statement, something went wrong!
+            global_vars.log("No IMU found.")
+            return None
+>>>>>>> 4f2d27b800a8bfdc168ecc3803d3779e67edfdcc

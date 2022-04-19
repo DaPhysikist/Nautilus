@@ -6,19 +6,20 @@ import threading
 # Custom imports
 from api import Radio
 from static import constants
-from static import globalvars
+from static import global_vars
 
 
 class BaseStation_Send_Ping(threading.Thread):
+    def __init__(self, out_q=None):
+        self.out_q = out_q
+        threading.Thread.__init__(self)
+
     def run(self):
         """ Constructor for the AUV """
         self.radio = None
-
-        try:
-            self.radio = Radio(constants.RADIO_PATH)
-            print("Radio device has been found.")
-        except:
-            print("Radio device is not connected to AUV on RADIO_PATH.")
+        # Try to assign us a new Radio object
+        self.radio, output_msg = global_vars.connect_to_radio()
+        self.log(output_msg)
 
         self.main_loop()
 
@@ -30,12 +31,8 @@ class BaseStation_Send_Ping(threading.Thread):
 
             if self.radio is None or self.radio.is_open() is False:
                 print("TEST radio not connected")
-                try:  # Try to connect to our devices.
-                    self.radio = Radio(constants.RADIO_PATH)
-                    print("Radio device has been found!")
-                except Exception as e:
-                    print("Failed to connect to radio: " + str(e))
-
+                self.radio, output_msg = global_vars.connect_to_radio()
+                self.log(output_msg)
             else:
                 try:
                     # Always send a connection verification packet
@@ -45,3 +42,7 @@ class BaseStation_Send_Ping(threading.Thread):
 
                 except Exception as e:
                     raise Exception("Error occured : " + str(e))
+
+    def log(self, message):
+        """ Logs the message to the GUI console by putting the function into the output-queue. """
+        self.out_q.put("log('" + message + "')")

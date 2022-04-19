@@ -10,12 +10,11 @@ from queue import Queue
 # Custom imports
 from api import Crc32
 from api import Radio
-from api import NavController
 from api import GPS
 from api import decode_command
 
 from static import constants
-from static import globalvars
+from static import global_vars
 
 
 class BaseStation_Receive(threading.Thread):
@@ -26,7 +25,6 @@ class BaseStation_Receive(threading.Thread):
         # Call super-class constructor
         # Instance variables
         self.radio = None
-        self.nav_controller = None
         self.gps = None
         self.in_q = in_q
         self.out_q = out_q
@@ -38,12 +36,8 @@ class BaseStation_Receive(threading.Thread):
         threading.Thread.__init__(self)
 
         # Try to assign our radio object
-        try:
-            self.radio = Radio(constants.RADIO_PATH)
-            self.log("Successfully found radio device on RADIO_PATH.")
-        except:
-            self.log(
-                "Warning: Cannot find radio device. Ensure RADIO_PATH is correct.")
+        self.radio, output_msg = global_vars.connect_to_radio()
+        self.log(output_msg)
 
         # Try to connect our Xbox 360 controller.
 
@@ -57,7 +51,7 @@ class BaseStation_Receive(threading.Thread):
             self.log("Warning: Could not connect to a GPS socket service.")
 
     def calibrate_controller(self):
-        """ Instantiates a new Xbox Controller Instance and NavigationController """
+        """ Instantiates a new Xbox Controller Instance """
         # Construct joystick and check that the driver/controller are working.
         self.joy = None
         self.main.log("Attempting to connect xbox controller")
@@ -69,12 +63,6 @@ class BaseStation_Receive(threading.Thread):
             except Exception as e:
                 continue
         self.main.log("Xbox controller is connected.")
-
-        # Instantiate New NavController With Joystick
-        self.nav_controller = NavController(
-            self.joy, self.button_cb, self.debug)
-
-        self.main.log("Controller is connected.")
 
     def auv_data(self, heading, temperature, pressure, movement, mission, flooded, control, longitude=None, latitude=None):
         """ Parses the AUV data-update packet, stores knowledge of its on-board sensors"""
@@ -135,9 +123,6 @@ class BaseStation_Receive(threading.Thread):
         """ Main threaded loop for the base station. """
         # Begin our main loop for this thread.
 
-        global connected
-        global lock
-
         while True:
             time.sleep(0.5)
 
@@ -145,26 +130,22 @@ class BaseStation_Receive(threading.Thread):
             if time.time() - self.time_since_last_ping > constants.CONNECTION_TIMEOUT:
                 # We are NOT connected to AUV, but we previously ('before') were. Status has changed to failed.
                 constants.lock.acquire()
-                if connected is True:
+                if global_vars.connected is True:
                     self.out_q.put("set_connection(False)")
                     self.log("Lost connection to AUV.")
-                    connected = False
+                    global_vars.connected = False
                 constants.lock.release()
 
             # This executes if we never had a radio object, or it got disconnected.
-            if self.radio is None or not os.path.exists(constants.RADIO_PATH):
+            if self.radio is None or not global_vars.path_existance(constants.RADIO_PATHS):
                 # This executes if we HAD a radio object, but it got disconnected.
-                if self.radio is not None and not os.path.exists(constants.RADIO_PATH):
+                if self.radio is not None and not global_vars.path_existance(constants.RADIO_PATHS):
                     self.log("Radio device has been disconnected.")
                     self.radio.close()
 
                 # Try to assign us a new Radio object
-                try:
-                    self.radio = Radio(constants.RADIO_PATH)
-                    self.log(
-                        "Radio device has been found on RADIO_PATH.")
-                except Exception as e:
-                    print("Radio error: ", str(e))
+                self.radio, output_msg = global_vars.connect_to_radio()
+                self.log(output_msg)
 
             # If we have a Radio object device, but we aren't connected to the AUV
             else:
@@ -182,6 +163,11 @@ class BaseStation_Receive(threading.Thread):
 
                         if not checksum:
                             print('invalid line*************')
+                            print(bin(intline >> 32))
+                            self.radio.flush()
+                            self.radio.close()
+                            self.radio, output_msg = global_vars.connect_to_radio()
+                            self.log(output_msg)
                             break
 
                         intline = intline >> 32
@@ -190,10 +176,10 @@ class BaseStation_Receive(threading.Thread):
                         if intline == constants.PING:
                             self.time_since_last_ping = time.time()
                             constants.lock.acquire()
-                            if connected is False:
+                            if global_vars.connected is False:
                                 self.log("Connection to AUV verified.")
                                 self.out_q.put("set_connection(True)")
-                                connected = True
+                                global_vars.connected = True
                             constants.lock.release()
                         # Data cases
                         else:

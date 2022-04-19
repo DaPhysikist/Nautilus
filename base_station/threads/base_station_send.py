@@ -9,23 +9,23 @@ from queue import Queue
 # Custom imports
 from api import Radio
 from api import xbox
-from api import NavController
 
 from static import constants
-from static import globalvars
+from static import global_vars
 
 # Navigation Encoding
 NAV_ENCODE = 0b000000100000000000000000           # | with XSY (forward, angle sign, angle)
 XBOX_ENCODE = 0b111000000000000000000000          # | with XY (left/right, down/up xbox input)
 MISSION_ENCODE = 0b000000000000000000000000       # | with X   (mission)
 DIVE_ENCODE = 0b110000000000000000000000           # | with D   (depth)
+KILL_ENCODE = 0b001000000000000000000000          # | with X (kill all / restart threads)
 
 # Action Encodings
 HALT = 0b010
 CAL_DEPTH = 0b011
 ABORT = 0b100
 DL_DATA = 0b101
-
+CAL_HEADING = 0b110
 
 class BaseStation_Send(threading.Thread):
     def __init__(self, in_q=None, out_q=None):
@@ -35,7 +35,6 @@ class BaseStation_Send(threading.Thread):
         # Instance variables
         self.radio = None
         self.joy = None
-        self.nav_controller = None
         self.in_q = in_q
         self.out_q = out_q
         self.manual_mode = True
@@ -43,13 +42,8 @@ class BaseStation_Send(threading.Thread):
         # Call super-class constructor
         threading.Thread.__init__(self)
 
-        # Try to assign our radio object
-        try:
-            self.radio = Radio(constants.RADIO_PATH)
-            self.log("Successfully found radio device on RADIO_PATH.")
-        except:
-            self.log(
-                "Warning: Cannot find radio device. Ensure RADIO_PATH is correct.")
+        self.radio, output_msg = global_vars.connect_to_radio()
+        self.log(output_msg)
 
         # Try to connect our Xbox 360 controller.
 
@@ -64,17 +58,9 @@ class BaseStation_Send(threading.Thread):
         except:
             self.log("Warning: Cannot find xbox controller")
 
-        try:
-            self.nav_controller = NavController(self.joy)
-            print("case3")
-
-            self.log("Successfully created a Navigation with Controller object.")
-            print("case4")
-        except:
-            self.log("Warning: Cannot find nav controller")
-
 
 # XXX ---------------------- XXX ---------------------------- XXX TESTING AREA
+
 
     def check_tasks(self):
         """ This checks all of the tasks (given from the GUI thread) in our in_q, and evaluates them. """
@@ -91,7 +77,7 @@ class BaseStation_Send(threading.Thread):
     def test_motor(self, motor):
         """ Attempts to send the AUV a signal to test a given motor. """
         constants.lock.acquire()
-        if not globalvars.connected:
+        if not global_vars.connected:
             constants.lock.release()
             self.log("Cannot test " + motor +
                      " motor(s) because there is no connection to the AUV.")
@@ -113,7 +99,7 @@ class BaseStation_Send(threading.Thread):
     def abort_mission(self):
         """ Attempts to abort the mission for the AUV."""
         constants.lock.acquire()
-        if not globalvars.connected:
+        if not global_vars.connected:
             constants.lock.release()
             self.log(
                 "Cannot abort mission because there is no connection to the AUV.")
@@ -126,7 +112,7 @@ class BaseStation_Send(threading.Thread):
     def start_mission(self, mission, depth, t):
         """  Attempts to start a mission and send to AUV. """
         constants.lock.acquire()
-        if globalvars.connected is False:
+        if global_vars.connected is False:
             constants.lock.release()
             self.log("Cannot start mission " + str(mission) +
                      " because there is no connection to the AUV.")
@@ -153,9 +139,12 @@ class BaseStation_Send(threading.Thread):
     def send_download_data(self):
         self.start_mission(DL_DATA, 0, 0)
 
+    def send_calibrate_heading(self):
+        self.start_mission(CAL_HEADING, 0, 0)
+
     def send_dive(self, depth):
         constants.lock.acquire()
-        if globalvars.connected is False:
+        if global_vars.connected is False:
             constants.lock.release()
             self.log("Cannot dive because there is no connection to the AUV.")
         else:
@@ -199,8 +188,8 @@ class BaseStation_Send(threading.Thread):
                 try:
                     # print("Creating joystick. 5 seconds...")
                     # self.joy = Joystick() TODO remove
-                    self.nav_controller = NavController(self.joy)
                     # print("Done creating.")
+                    pass
                 except Exception as e:
                     print("Xbox creation error: ", str(e))
                     pass
@@ -208,22 +197,17 @@ class BaseStation_Send(threading.Thread):
             # elif not self.joy.connected():
             #    self.log("Xbox controller has been disconnected.")
             #    self.joy = None
-            #    self.nav_controller = None
 
             # This executes if we never had a radio object, or it got disconnected.
-            if self.radio is None or not os.path.exists(constants.RADIO_PATH):
+            if self.radio is None or not global_vars.path_existance(constants.RADIO_PATHS):
                 # This executes if we HAD a radio object, but it got disconnected.
-                if self.radio is not None and not os.path.exists(constants.RADIO_PATH):
+                if self.radio is not None and not global_vars.path_existance(constants.RADIO_PATHS):
                     self.log("Radio device has been disconnected.")
                     self.radio.close()
 
                 # Try to assign us a new Radio object
-                try:
-                    self.radio = Radio(constants.RADIO_PATH)
-                    self.log(
-                        "Radio device has been found on RADIO_PATH.")
-                except Exception as e:
-                    print("Radio error: ", str(e))
+                self.radio, output_msg = global_vars.connect_to_radio()
+                self.log(output_msg)
 
             # If we have a Radio object device, but we aren't connected to the AUV
             else:
@@ -231,14 +215,28 @@ class BaseStation_Send(threading.Thread):
                 try:
                     # This is where secured/synchronous code should go.
                     constants.lock.acquire()
-                    if globalvars.connected and self.manual_mode:
+                    if global_vars.connected and self.manual_mode:
                         constants.lock.release()
-                        if self.joy is not None and self.joy.A():  # and self.joy.connected() and self.nav_controller is not None:
+                        if self.joy is not None and self.joy.leftBumper() and self.joy.rightBumper():
+                            # Read in potential kill-all/restart command
+                            if self.joy.Guide():
+                                # Send restart command
+                                constants.radio_lock.acquire()
+                                self.radio.write(KILL_ENCODE | 1)
+                                constants.radio_lock.release()
+                                print("Restarting AUV threads...")
+
+                            elif self.joy.Back() and self.joy.Start():
+                                # Send kill-all command
+                                constants.radio_lock.acquire()
+                                self.radio.write(KILL_ENCODE)
+                                constants.radio_lock.release()
+                                print("Killing AUV threads...")
+
+                        if self.joy is not None and self.joy.A():
                             xbox_input = True
 
                             try:
-                                # self.nav_controller.handle()
-                                #self.radio.write("x(" + str(self.nav_controller.get_data()) + ")")
                                 print("[XBOX] X:", self.joy.leftX())
                                 print("[XBOX] Y:", self.joy.leftY())
                                 print("[XBOX] A\t")
@@ -248,6 +246,8 @@ class BaseStation_Send(threading.Thread):
                                 y = round(self.joy.leftY()*100)
                                 right_trigger = round(self.joy.rightTrigger()*10)
 
+                                self.out_q.put("set_xbox_status(1," + str(right_trigger/10) + ")")
+                                print(right_trigger)
                                 navmsg = self.encode_xbox(x, y, right_trigger)
 
                                 constants.radio_lock.acquire()
@@ -263,6 +263,7 @@ class BaseStation_Send(threading.Thread):
                             self.radio.write(XBOX_ENCODE)
                             constants.radio_lock.release()
                             print("[XBOX] NO LONGER A\t")
+                            self.out_q.put("set_xbox_status(0,0)")
                             xbox_input = False
                     else:
                         constants.lock.release()
@@ -280,6 +281,9 @@ class BaseStation_Send(threading.Thread):
 
     def close(self):
         """ Function that is executed upon the closure of the GUI (passed from input-queue). """
+        # close the xbox controller
+        if(self.joy is not None):
+            self.joy.close()
         os._exit(1)  # => Force-exit the process immediately.
 
     def mission_started(self, index):

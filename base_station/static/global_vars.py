@@ -1,18 +1,9 @@
-import threading
 import os
-from api import Radio
 from static import constants
-# determines if connected to BS
-connected = False
+from api import Radio
+# Global variables used by the BaseStation threads
 
-# Determines if AUV threads should be stopped / restarted
-stop_all_threads = False
-restart_threads = False
-
-depth_offset = 0
-heading_offset = 0
-
-radio = None
+connected = False    # boolean that determines if BS has radio connection with AUV
 
 
 def path_existance(radioPaths):
@@ -23,25 +14,18 @@ def path_existance(radioPaths):
 
 
 def connect_to_radio():
-    global radio
     success_msg = ""
     warning_msg = ""
+    radio = None
     for rp in constants.RADIO_PATHS:
         try:
             radio = Radio(rp['path'])
-            success_msg += "Successfully found radio device on path " + str(rp['radioNum']) + "."
+            success_msg += "Successfully found radio device on path " + str(rp['radioNum'])
+            return radio, success_msg
             break
         except:
-            if rp["radioNum"] == 1:
+            if rp['radioNum'] == 1:
                 warning_msg += "Warning: Cannot find radio device on paths " + str(rp['radioNum'])
             else:
                 warning_msg += ", " + str(rp['radioNum'])
-
-    if len(success_msg) == 0:
-        log(warning_msg)
-    else:
-        log(success_msg)
-
-
-def log(val):
-    print("[AUV]\t" + val)
+    return radio, warning_msg
