@@ -253,26 +253,26 @@ class Main():
         #                                   padx=BUTTON_PAD_X+45, pady=BUTTON_PAD_Y, font=(4, BUTTON_SIZE), command=lambda: self.out_q.put("send_dive())"))
 
         self.download_data_button = Button(self.buttons_frame, anchor=tkinter.W, text="Download\nData", takefocus=False,
-                                           padx=BUTTON_PAD_X+25, pady=BUTTON_PAD_Y, font=(FONT_SIZE-10, BUTTON_SIZE), command=lambda: self.out_q.put("send_download_data()"))
+                                           padx=BUTTON_PAD_X, pady=BUTTON_PAD_Y, font=(FONT_SIZE-10, BUTTON_SIZE), command=lambda: self.out_q.put("send_download_data()"))
 
         self.calibrate_depth_button = Button(self.buttons_frame, anchor=tkinter.W, text="Calibrate\nDepth", takefocus=False,
-                                             padx=BUTTON_PAD_X+30, pady=BUTTON_PAD_Y, font=(FONT_SIZE-10, BUTTON_SIZE), command=lambda: self.out_q.put("send_calibrate_depth()"))
+                                             padx=BUTTON_PAD_X, pady=BUTTON_PAD_Y, font=(FONT_SIZE-10, BUTTON_SIZE), command=lambda: self.out_q.put("send_calibrate_depth()"))
 
         # May need to change text if it gets confusing with the existing calibrate heading button
         self.calibrate_imu_heading_button = Button(self.buttons_frame, anchor=tkinter.W, text="Calibrate\nHeading", takefocus=False,
-                                             padx=BUTTON_PAD_X+35, pady=BUTTON_PAD_Y, font=(FONT_SIZE-10, BUTTON_SIZE), command=lambda: self.out_q.put("send_calibrate_heading()"))
+                                             padx=BUTTON_PAD_X, pady=BUTTON_PAD_Y, font=(FONT_SIZE-10, BUTTON_SIZE), command=lambda: self.out_q.put("send_calibrate_heading()"))
 
         # self.dive_command_button = Button(self.buttons_frame, anchor=tkinter.W, text="Dive\nCommand", takefocus=False,
         #                                   padx=BUTTON_PAD_X+45, pady=BUTTON_PAD_Y, font=(4, BUTTON_SIZE), command=lambda: self.out_q.put("send_dive())"))
 
-        self.download_data_button.pack(expand=NO, side=LEFT)
+        self.download_data_button.pack(expand=YES, side=LEFT)
         self.download_data_button.place(relx=0, rely=0)
 
-        self.calibrate_depth_button.pack(expand=NO, side=LEFT)
-        self.calibrate_depth_button.place(relx=0.2, rely=0)
+        self.calibrate_depth_button.pack(expand=YES, side=LEFT)
+        self.calibrate_depth_button.place(relx=0.3, rely=0)
 
-        self.calibrate_imu_heading_button.pack(expand=NO, side=LEFT)
-        self.calibrate_imu_heading_button.place(relx=0.4, rely=0)
+        self.calibrate_imu_heading_button.pack(expand=YES, side=LEFT)
+        self.calibrate_imu_heading_button.place(relx=0.6, rely=0)
 
         # self.dive_command_button.pack(expand=YES, side=LEFT)
         # self.dive_command_button.place(relx=0.67, rely=0)
