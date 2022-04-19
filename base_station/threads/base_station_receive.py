@@ -36,12 +36,8 @@ class BaseStation_Receive(threading.Thread):
         threading.Thread.__init__(self)
 
         # Try to assign our radio object
-        try:
-            self.radio = Radio(constants.RADIO_PATH)
-            self.log("Successfully found radio device on RADIO_PATH.")
-        except:
-            self.log(
-                "Warning: Cannot find radio device. Ensure RADIO_PATH is correct.")
+        self.radio, output_msg = global_vars.connect_to_radio()
+        self.log(output_msg)
 
         # Try to connect our Xbox 360 controller.
 
@@ -128,8 +124,6 @@ class BaseStation_Receive(threading.Thread):
         # Begin our main loop for this thread.
 
         while True:
-            print(self.radio.is_open())
-
             time.sleep(0.5)
 
             # Always try to update connection status
@@ -143,19 +137,15 @@ class BaseStation_Receive(threading.Thread):
                 constants.lock.release()
 
             # This executes if we never had a radio object, or it got disconnected.
-            if self.radio is None or not os.path.exists(constants.RADIO_PATH):
+            if self.radio is None or not global_vars.path_existance(constants.RADIO_PATHS):
                 # This executes if we HAD a radio object, but it got disconnected.
-                if self.radio is not None and not os.path.exists(constants.RADIO_PATH):
+                if self.radio is not None and not global_vars.path_existance(constants.RADIO_PATHS):
                     self.log("Radio device has been disconnected.")
                     self.radio.close()
 
                 # Try to assign us a new Radio object
-                try:
-                    self.radio = Radio(constants.RADIO_PATH)
-                    self.log(
-                        "Radio device has been found on RADIO_PATH.")
-                except Exception as e:
-                    print("Radio error: ", str(e))
+                self.radio, output_msg = global_vars.connect_to_radio()
+                self.log(output_msg)
 
             # If we have a Radio object device, but we aren't connected to the AUV
             else:
@@ -176,8 +166,8 @@ class BaseStation_Receive(threading.Thread):
                             print(bin(intline >> 32))
                             self.radio.flush()
                             self.radio.close()
-                            self.radio = Radio(constants.RADIO_PATH)
-
+                            self.radio, output_msg = global_vars.connect_to_radio()
+                            self.log(output_msg)
                             break
 
                         intline = intline >> 32

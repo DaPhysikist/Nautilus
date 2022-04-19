@@ -44,11 +44,7 @@ class AUV_Send_Data(threading.Thread):
 
             if self.radio is None or self.radio.is_open() is False:
                 print("TEST radio not connected")
-                try:  # Try to connect to our devices.
-                    self.radio = Radio(constants.RADIO_PATH)
-                    global_vars.log("Radio device has been found!")
-                except:
-                    pass
+                global_vars.connect_to_radio()
 
             else:
                 try:

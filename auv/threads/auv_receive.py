@@ -89,11 +89,7 @@ class AUV_Receive(threading.Thread):
                 self.timeout()
 
             if self.radio is None or self.radio.is_open() is False:
-                try:  # Try to connect to our devices.
-                    self.radio = Radio(constants.RADIO_PATH)
-                    global_vars.log("Radio device has been found!")
-                except:
-                    pass
+                global_vars.connect_to_radio()
             else:
                 try:
                     # Read seven bytes (3 byte message, 4 byte checksum)
