@@ -272,7 +272,7 @@ class Main():
         self.calibrate_depth_button.place(relx=0.35, rely=0)
 
         self.calibrate_imu_heading_button.pack(expand=YES, side=LEFT)
-        self.calibrate_imu_heading_button.place(relx=0.65, rely=0)
+        self.calibrate_imu_heading_button.place(relx=0.68, rely=0)
 
         # self.dive_command_button.pack(expand=YES, side=LEFT)
         # self.dive_command_button.place(relx=0.67, rely=0)
