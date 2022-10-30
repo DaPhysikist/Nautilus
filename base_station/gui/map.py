@@ -32,7 +32,7 @@ KM_TO_M = 1000.000000000
 MI_TO_M = 1609.340000000
 KM_TO_MI = 0000.621371000
 M_TO_MI = 0000.000621371
-MI_TO_KM = 0001.609340000
+MI_TO_KM = 1.609340000
 M_TO_KM = 0000.001000000
 
 # Other Debug Constants
@@ -377,7 +377,6 @@ class Map:
 
         return graph
 
-
     def nav_to_waypoint(self):
         print("[MAP] Opening nav-to-waypoint prompt.")
         prompt_window = Toplevel(self.window)
@@ -393,7 +392,6 @@ class Map:
         prompt_window.wm_attributes('-topmost')
         Label(prompt_window, text="Waypoint", font=(FONT, FONT_SIZE)).grid(row=1)
 
-
         buttonList = list()
 
         # creates combo box of waypoints
@@ -402,8 +400,8 @@ class Map:
 
         self.waypoint_list.grid(row=2, column=0, padx=5, pady=5)
 
-
         # saves the selected waypoint when save is pressed
+
         def set_waypoint():
             self.nav_x = self.waypoints[self.waypoint_list.current()][0]
             self.nav_y = self.waypoints[self.waypoint_list.current()][1]
@@ -418,7 +416,6 @@ class Map:
         ])
 
         prompt_submit.grid(row=3, column=0, padx=5, pady=5)
-
 
     def add_waypoint(self, x=0, y=0, label="My Waypoint"):
         self.main.log("Added waypoint \"" + label + "\" at map-position (" + str(int(x)) + ", " + str(int(y)) + ") " +
